@@ -1,0 +1,652 @@
+﻿<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#07111f">
+  <title>จัดการหมายจับ | Warrant Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #07111f;
+      --surface: #0f172a;
+      --panel: #111827;
+      --line: #243244;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --blue: #2563eb;
+      --green: #16a34a;
+      --yellow: #eab308;
+      --red: #dc2626;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'IBM Plex Sans Thai', sans-serif; background: var(--bg); color: var(--text); padding: 16px; }
+    .wrap { max-width: 960px; margin: 0 auto; display: grid; gap: 16px; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    h1, h2, h3 { margin: 0; line-height: 1.25; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 18px; margin-bottom: 12px; }
+    h3 { font-size: 16px; margin-bottom: 10px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .user { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--panel); overflow: hidden; display: grid; place-items: center; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 760px) { .grid.two { grid-template-columns: 1fr 1fr; } }
+    input, select, textarea { width: 100%; border: 1px solid var(--line); background: #08111f; color: var(--text); border-radius: 10px; padding: 12px; font: inherit; }
+    textarea { min-height: 80px; resize: vertical; }
+    label { display: block; color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+    .btn { border: 0; border-radius: 10px; padding: 12px 14px; font: inherit; font-weight: 700; cursor: pointer; color: white; background: var(--blue); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn.secondary { background: #334155; }
+    .btn.danger { background: var(--red); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid var(--line); padding: 10px; text-align: left; vertical-align: top; font-size: 14px; }
+    th { color: var(--muted); font-size: 12px; font-weight: 700; background: var(--panel); }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+    .mobile-list { display: none; gap: 10px; }
+    .record-card { border: 1px solid var(--line); border-radius: 10px; background: #08111f; padding: 12px; display: grid; gap: 10px; }
+    .record-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .record-no { font-weight: 800; font-family: monospace; color: var(--text); }
+    .record-name { font-weight: 700; }
+    .record-meta { display: grid; gap: 6px; }
+    .record-row { display: grid; grid-template-columns: 88px 1fr; gap: 8px; font-size: 13px; line-height: 1.45; }
+    .record-row span:first-child { color: var(--muted); }
+    .warrant-select-list { display: grid; gap: 10px; }
+    .warrant-option { border: 1px solid var(--line); border-radius: 10px; background: #08111f; padding: 12px; display: grid; gap: 10px; cursor: pointer; }
+    .warrant-option.disabled { opacity: .58; cursor: not-allowed; }
+    .warrant-option input { width: auto; }
+    .warrant-option-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+    .warrant-option-main { display: flex; align-items: flex-start; gap: 10px; }
+    .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 9px; font-size: 12px; font-weight: 700; border: 1px solid transparent; white-space: nowrap; }
+    .wanted { background: rgba(22,163,74,.15); color: #86efac; border-color: rgba(22,163,74,.35); }
+    .pending-revocation { background: rgba(234,179,8,.15); color: #fde68a; border-color: rgba(234,179,8,.35); }
+    .revoked { background: rgba(220,38,38,.15); color: #fecaca; border-color: rgba(220,38,38,.35); }
+    .sync-pending { background: rgba(234,179,8,.15); color: #fde68a; border-color: rgba(234,179,8,.35); }
+    .sync-synced { background: rgba(22,163,74,.15); color: #86efac; border-color: rgba(22,163,74,.35); }
+    .sync-error { background: rgba(220,38,38,.15); color: #fecaca; border-color: rgba(220,38,38,.35); }
+    .message { padding: 12px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); background: var(--panel); }
+    .message.error { border-color: rgba(220,38,38,.45); color: #fecaca; }
+    .add-entry-btn { width: 100%; margin-top: 14px; border: 1px dashed rgba(148,163,184,.45); border-radius: 14px; padding: 14px; background: rgba(37,99,235,.1); color: #bfdbfe; font: inherit; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .add-entry-btn span { width: 30px; height: 30px; border-radius: 50%; background: var(--blue); color: white; display: inline-grid; place-items: center; }
+    .add-panel { scroll-margin-top: 12px; }
+    .icon-btn { width: 42px; height: 42px; padding: 0; flex: 0 0 auto; }
+    .hidden { display: none !important; }
+    .sticky-actions {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 50;
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(7, 17, 31, .94);
+      border-top: 1px solid var(--line);
+      backdrop-filter: blur(10px);
+      display: none;
+    }
+    .sticky-actions.show { display: block; }
+    .sticky-inner { max-width: 960px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+    .sticky-count { color: var(--text); font-weight: 700; }
+    .sticky-count small { display: block; color: var(--muted); font-weight: 500; }
+    .confirm-backdrop { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.72); display: none; align-items: center; justify-content: center; padding: 16px; }
+    .confirm-backdrop.show { display: flex; }
+    .confirm-modal { width: min(520px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.45); }
+    .summary-list { display: grid; gap: 8px; margin: 12px 0; }
+    .summary-row { display: grid; grid-template-columns: 120px 1fr; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: #08111f; }
+    .summary-row span:first-child { color: var(--muted); }
+    .selected-count-chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px; background: rgba(37,99,235,.16); color: #bfdbfe; border: 1px solid rgba(37,99,235,.35); font-size: 13px; font-weight: 700; }
+    .section-gap { display: grid; gap: 14px; }
+    .section-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .section-head h3 { margin: 0; }
+    .count-chip { display: inline-flex; align-items: center; border-radius: 999px; padding: 4px 9px; color: #bfdbfe; background: rgba(37,99,235,.14); border: 1px solid rgba(37,99,235,.28); font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .workflow { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 14px; }
+    @media (min-width: 760px) { .workflow { grid-template-columns: repeat(3, 1fr); } }
+    .step { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: #08111f; color: var(--muted); }
+    .step strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 2px; }
+    .history-toggle { width: 100%; justify-content: space-between; background: #1f2937; }
+    .history-body.hidden { display: none !important; }
+    @media (min-width: 761px) { .sticky-actions { display: none !important; } }
+    @media (max-width: 760px) { body { padding-bottom: 86px; } th.optional, td.optional { display: none; } .btn { width: 100%; } .actions { width: 100%; } .summary-row { grid-template-columns: 1fr; } .table-wrap.responsive-table { display: none; } .mobile-list { display: grid; } .record-card .btn { width: 100%; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="panel topbar">
+      <div>
+        <h1>จัดการหมายจับ</h1>
+        <div class="muted">บันทึกเหตุที่ทำให้หมายจับสิ้นผล และติดตามงานรอเพิกถอน</div>
+      </div>
+      <div class="user" id="profileBox">
+        <div class="avatar" id="avatar"><i class="fas fa-user"></i></div>
+        <span id="displayName">กำลังเชื่อมต่อ LINE</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="topbar" style="padding:0; background:transparent; border:0">
+        <h2>รายการดำเนินการ</h2>
+        <div class="actions">
+          <button class="btn secondary hidden" id="syncBtn"><i class="fas fa-arrows-rotate"></i>ลองอัปเดตอีกครั้ง</button>
+        </div>
+      </div>
+      <div id="pendingList" class="message">กำลังโหลด...</div>
+      <button class="add-entry-btn" id="openAddBtn" type="button">
+        <span><i class="fas fa-plus"></i></span>
+        เพิ่มรายการดำเนินการ
+      </button>
+    </section>
+
+    <section class="panel add-panel hidden" id="addPanel">
+      <div class="topbar" style="padding:0; background:transparent; border:0; margin-bottom:12px">
+        <h2>เพิ่มรายการดำเนินการ</h2>
+        <button class="btn secondary icon-btn" id="closeAddBtn" type="button" aria-label="ปิดฟอร์มเพิ่มรายการ"><i class="fas fa-xmark"></i></button>
+      </div>
+      <div class="workflow">
+        <div class="step"><strong>1. ค้นหาจำเลย</strong><span>กรอกเลขบัตรประชาชน 13 หลัก</span></div>
+        <div class="step"><strong>2. เลือกหมายจับ</strong><span>เลือกเฉพาะหมายจับที่เหตุเดียวกันทำให้สิ้นผล</span></div>
+        <div class="step"><strong>3. บันทึกเหตุ</strong><span>ตรวจสอบก่อนเปลี่ยนสถานะหมายจับ</span></div>
+      </div>
+      <div class="grid two">
+        <div>
+          <label for="id13Input">เลขบัตรประชาชน 13 หลัก</label>
+          <input id="id13Input" inputmode="numeric" maxlength="13" placeholder="กรอกเลข 13 หลัก">
+        </div>
+        <div style="align-self:end" class="actions">
+          <button class="btn" id="searchBtn"><i class="fas fa-search"></i>ค้นหาหมายจับ</button>
+          <button class="btn secondary" id="clearBtn"><i class="fas fa-rotate-left"></i>ล้างข้อมูล</button>
+        </div>
+      </div>
+      <div id="searchMessage" style="margin-top:12px"></div>
+      <div id="warrantResults" style="margin-top:12px"></div>
+
+      <div id="processForm" class="hidden" style="margin-top:16px">
+        <div class="grid two">
+          <div>
+            <label for="reasonSelect">เหตุ</label>
+            <select id="reasonSelect">
+              <option value="มอบตัว">มอบตัว</option>
+              <option value="ตำรวจจับ">ตำรวจจับ</option>
+              <option value="อยู่เรือนจำอื่น">อยู่เรือนจำอื่น</option>
+              <option value="อื่น ๆ">อื่น ๆ</option>
+            </select>
+          </div>
+          <div>
+            <label for="submitToInput">เสนอถึง</label>
+            <input id="submitToInput" placeholder="เช่น ผู้มีอำนาจพิจารณา">
+          </div>
+        </div>
+        <div id="reasonDetailBox" class="hidden" style="margin-top:12px">
+          <label for="reasonDetailInput">รายละเอียดเหตุ</label>
+          <textarea id="reasonDetailInput" placeholder="ระบุรายละเอียดเพิ่มเติม"></textarea>
+        </div>
+        <div class="actions" style="margin-top:12px">
+          <span class="selected-count-chip" id="selectedCountChip"><i class="fas fa-list-check"></i>เลือก 0 หมายจับ</span>
+          <button class="btn" id="saveBtn" disabled><i class="fas fa-clipboard-check"></i>ตรวจสอบก่อนบันทึก</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+
+  <div class="sticky-actions" id="stickyActions">
+    <div class="sticky-inner">
+      <div class="sticky-count"><span id="stickyCount">เลือก 0 หมายจับ</span><small>สถานะใหม่: สิ้นผลรอเพิกถอน</small></div>
+      <button class="btn" id="stickySaveBtn" disabled><i class="fas fa-clipboard-check"></i>ตรวจสอบ</button>
+    </div>
+  </div>
+
+  <div class="confirm-backdrop" id="confirmBackdrop">
+    <div class="confirm-modal">
+      <h3>ตรวจสอบก่อนบันทึก</h3>
+      <div class="muted">รายการนี้จะเปลี่ยนสถานะหมายจับเป็นสิ้นผลรอเพิกถอน</div>
+      <div class="summary-list" id="confirmSummary"></div>
+      <div class="actions">
+        <button class="btn" id="confirmSaveBtn"><i class="fas fa-floppy-disk"></i>ยืนยันบันทึก</button>
+        <button class="btn secondary" id="cancelConfirmBtn"><i class="fas fa-xmark"></i>ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="confirm-backdrop" id="revokeBackdrop">
+    <div class="confirm-modal">
+      <h3>ยืนยันการเพิกถอน</h3>
+      <div class="muted">รายการนี้จะถูกบันทึกเป็นสถานะหมายจับเพิกถอน</div>
+      <div class="summary-list" id="revokeSummary"></div>
+      <div class="actions">
+        <button class="btn danger" id="confirmRevokeBtn"><i class="fas fa-ban"></i>ยืนยันเพิกถอน</button>
+        <button class="btn secondary" id="cancelRevokeBtn"><i class="fas fa-xmark"></i>ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+  <script src="https://static.line-scdn.net/liff/edge/versions/2.23.0/sdk.js"></script>
+  <script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyss_zHh0OcITnBgf86OQCL_TMBbWLuyYkQpI2gyQIzXPYOlW0VLOo5O1i2gs2RC13a/exec";
+    const LIFF_ID = "2010272973-QI3DZhXq";
+    const STATUS_WANTED = "ต้องการตัว";
+    const STATUS_PENDING = "สิ้นผลรอเพิกถอน";
+    const STATUS_REVOKED = "เพิกถอน";
+
+    let lineProfile = { userId: "", displayName: "", pictureUrl: "" };
+    let searchResults = [];
+    let pendingRows = [];
+    let revokeRowId = null;
+
+    function escapeHtml(value) {
+      return String(value == null ? "" : value).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+    }
+
+    function statusBadge(status) {
+      const s = String(status || "-");
+      let cls = "pending-revocation";
+      if (s === STATUS_WANTED) cls = "wanted";
+      if (s === STATUS_REVOKED) cls = "revoked";
+      return `<span class="badge ${cls}">${escapeHtml(s)}</span>`;
+    }
+
+    function syncBadge(status) {
+      const s = String(status || "pending");
+      const cls = s === "synced" ? "sync-synced" : s === "error" ? "sync-error" : "sync-pending";
+      const label = s === "synced" ? "อัปเดตแล้ว" : s === "error" ? "อัปเดตไม่สำเร็จ" : "รออัปเดต";
+      return `<span class="badge ${cls}">${label}</span>`;
+    }
+
+    function syncCell(row) {
+      if ((row.syncStatus || "pending") === "synced" && !row.syncError) return "";
+      return `${syncBadge(row.syncStatus)}${row.syncError ? `<div class="muted">${escapeHtml(row.syncError)}</div>` : ""}`;
+    }
+
+    function setMessage(id, message, isError = false) {
+      document.getElementById(id).innerHTML = message ? `<div class="message ${isError ? "error" : ""}">${escapeHtml(message)}</div>` : "";
+    }
+
+    function recordCard(row, includeAction) {
+      const canRevoke = row.warrantStatus === STATUS_PENDING && row.syncStatus === "synced";
+      const updateHtml = syncCell(row);
+      return `<article class="record-card">
+        <div class="record-card-head">
+          <div>
+            <div class="record-no">${escapeHtml(row.warrantNo || "")}</div>
+            <div class="record-name">${escapeHtml(row.fullName || "")}</div>
+          </div>
+          ${statusBadge(row.warrantStatus)}
+        </div>
+        <div class="record-meta">
+          <div class="record-row"><span>เวลา</span><strong>${escapeHtml(row.timestamp || "")}</strong></div>
+          <div class="record-row"><span>เหตุ</span><strong>${escapeHtml(row.reason || "")}${row.reasonDetail ? `<div class="muted">${escapeHtml(row.reasonDetail)}</div>` : ""}</strong></div>
+          ${updateHtml ? `<div class="record-row"><span>ผลอัปเดต</span><strong>${updateHtml}</strong></div>` : ""}
+        </div>
+        ${includeAction ? `<button class="btn danger" onclick="openRevokeConfirm(${Number(row.rowId)})" ${canRevoke ? "" : "disabled"}><i class="fas fa-ban"></i>เพิกถอน</button>` : ""}
+      </article>`;
+    }
+
+    function warrantOptionCard(w, index) {
+      const selectable = w.status === STATUS_WANTED;
+      return `<label class="warrant-option ${selectable ? "" : "disabled"}">
+        <div class="warrant-option-head">
+          <div class="warrant-option-main">
+            <input type="checkbox" class="warrantCheck" value="${index}" ${selectable ? "" : "disabled"}>
+            <div>
+              <div class="record-no">${escapeHtml(w.warrantNo || "")}</div>
+              <div class="record-name">${escapeHtml(w.fullName || "")}</div>
+            </div>
+          </div>
+          ${statusBadge(w.status)}
+        </div>
+        <div class="record-meta">
+          <div class="record-row"><span>ประกัน</span><strong>${escapeHtml(w.bail || "-")}</strong></div>
+        </div>
+      </label>`;
+    }
+
+    async function initLiff() {
+      await liff.init({ liffId: LIFF_ID });
+      if (!liff.isLoggedIn()) {
+        liff.login();
+        return;
+      }
+      const profile = await liff.getProfile();
+      lineProfile = profile;
+      document.getElementById("displayName").innerText = profile.displayName;
+      if (profile.pictureUrl) {
+        document.getElementById("avatar").innerHTML = `<img src="${profile.pictureUrl}" alt="Profile">`;
+      }
+    }
+
+    async function callGas(action, payload = {}) {
+      if (!lineProfile.userId) throw new Error("ไม่พบ LINE User ID");
+      const response = await fetch(GAS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action,
+          page: "manage.html",
+          userId: lineProfile.userId,
+          displayName: lineProfile.displayName,
+          payload
+        })
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error || "เกิดข้อผิดพลาด");
+      return result;
+    }
+
+
+    function openAddPanel() {
+      const panel = document.getElementById("addPanel");
+      panel.classList.remove("hidden");
+      document.getElementById("openAddBtn").classList.add("hidden");
+      setTimeout(() => {
+        panel.scrollIntoView({ behavior: "smooth", block: "start" });
+        document.getElementById("id13Input").focus();
+      }, 50);
+    }
+
+    function closeAddPanel() {
+      clearForm(true);
+      setMessage("searchMessage", "");
+      document.getElementById("addPanel").classList.add("hidden");
+      document.getElementById("openAddBtn").classList.remove("hidden");
+    }
+    async function searchWarrants() {
+      const id13 = document.getElementById("id13Input").value.trim();
+      if (!/^\d{13}$/.test(id13)) {
+        setMessage("searchMessage", "กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก", true);
+        return;
+      }
+      const searchBtn = document.getElementById("searchBtn");
+      searchBtn.disabled = true;
+      searchBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>กำลังค้นหา`;
+      setMessage("searchMessage", "กำลังค้นหา...");
+      document.getElementById("warrantResults").innerHTML = "";
+      document.getElementById("processForm").classList.add("hidden");
+      try {
+        const result = await callGas("search", { searchType: "id13", keyword: id13 });
+        searchResults = result.data || [];
+        renderSearchResults();
+        setMessage("searchMessage", searchResults.length ? `พบหมายจับ ${searchResults.length} รายการ` : "ไม่พบหมายจับในระบบ");
+      } catch (err) {
+        setMessage("searchMessage", err.message, true);
+      } finally {
+        searchBtn.disabled = false;
+        searchBtn.innerHTML = `<i class="fas fa-search"></i>ค้นหาหมายจับ`;
+      }
+    }
+
+    function renderSearchResults() {
+      if (!searchResults.length) return;
+      let html = `<div class="table-wrap responsive-table"><table><thead><tr><th>เลือก</th><th>เลขที่หมายจับ</th><th>ชื่อสกุล</th><th>ประกัน</th><th>สถานะหมายจับ</th></tr></thead><tbody>`;
+      searchResults.forEach((w, index) => {
+        const selectable = w.status === STATUS_WANTED;
+        html += `<tr>
+          <td><input type="checkbox" class="warrantCheck" value="${index}" ${selectable ? "" : "disabled"}></td>
+          <td>${escapeHtml(w.warrantNo)}</td>
+          <td>${escapeHtml(w.fullName)}</td>
+          <td>${escapeHtml(w.bail || "-")}</td>
+          <td>${statusBadge(w.status)}</td>
+        </tr>`;
+      });
+      html += `</tbody></table></div><div class="mobile-list warrant-select-list">${searchResults.map((w, index) => warrantOptionCard(w, index)).join("")}</div>`;
+      document.getElementById("warrantResults").innerHTML = html;
+      document.getElementById("processForm").classList.remove("hidden");
+      document.querySelectorAll(".warrantCheck").forEach(el => el.addEventListener("change", updateSelectedUi));
+      updateSelectedUi();
+    }
+
+
+    function getSelectedWarrants() {
+      return Array.from(document.querySelectorAll(".warrantCheck:checked")).map(el => searchResults[Number(el.value)]);
+    }
+
+    function updateSelectedUi() {
+      const count = getSelectedWarrants().length;
+      document.getElementById("selectedCountChip").innerHTML = `<i class="fas fa-list-check"></i>เลือก ${count} หมายจับ`;
+      document.getElementById("stickyCount").innerText = `เลือก ${count} หมายจับ`;
+      document.getElementById("saveBtn").disabled = count === 0;
+      document.getElementById("stickySaveBtn").disabled = count === 0;
+      document.getElementById("stickyActions").classList.toggle("show", count > 0);
+    }
+
+    function openConfirm() {
+      const selected = getSelectedWarrants();
+      if (!selected.length) {
+        setMessage("searchMessage", "กรุณาเลือกหมายจับที่อยู่สถานะต้องการตัวอย่างน้อย 1 รายการ", true);
+        return;
+      }
+      const reason = document.getElementById("reasonSelect").value;
+      const reasonDetail = document.getElementById("reasonDetailInput").value.trim();
+      const submitTo = document.getElementById("submitToInput").value.trim() || "-";
+      if (reason === "อื่น ๆ" && !reasonDetail) {
+        setMessage("searchMessage", "กรุณาระบุรายละเอียดเหตุ", true);
+        return;
+      }
+      const warrantList = selected.map(w => escapeHtml(w.warrantNo)).join(", ");
+      document.getElementById("confirmSummary").innerHTML = `
+        <div class="summary-row"><span>จำนวนหมายจับ</span><strong>${selected.length} รายการ</strong></div>
+        <div class="summary-row"><span>เลขที่หมายจับ</span><strong>${warrantList}</strong></div>
+        <div class="summary-row"><span>เหตุ</span><strong>${escapeHtml(reason)}${reasonDetail ? " - " + escapeHtml(reasonDetail) : ""}</strong></div>
+        <div class="summary-row"><span>เสนอถึง</span><strong>${escapeHtml(submitTo)}</strong></div>
+        <div class="summary-row"><span>สถานะใหม่</span><strong>${statusBadge(STATUS_PENDING)}</strong></div>
+      `;
+      document.getElementById("confirmBackdrop").classList.add("show");
+    }
+
+    function closeConfirm() {
+      document.getElementById("confirmBackdrop").classList.remove("show");
+    }
+    async function saveProcess() {
+      const selected = getSelectedWarrants();
+      if (!selected.length) {
+        setMessage("searchMessage", "กรุณาเลือกหมายจับที่อยู่สถานะต้องการตัวอย่างน้อย 1 รายการ", true);
+        return;
+      }
+      const reason = document.getElementById("reasonSelect").value;
+      const reasonDetail = document.getElementById("reasonDetailInput").value.trim();
+      const submitTo = document.getElementById("submitToInput").value.trim();
+      if (reason === "อื่น ๆ" && !reasonDetail) {
+        setMessage("searchMessage", "กรุณาระบุรายละเอียดเหตุ", true);
+        return;
+      }
+      try {
+        document.getElementById("confirmSaveBtn").disabled = true;
+        document.getElementById("confirmSaveBtn").innerHTML = `<i class="fas fa-spinner fa-spin"></i>กำลังบันทึก`;
+        const result = await callGas("addProcess", {
+          selectedWarrants: selected.map(w => ({ warrantNo: w.warrantNo })),
+          reason,
+          reasonDetail,
+          submitTo
+        });
+        closeConfirm();
+        setMessage("searchMessage", `บันทึกสำเร็จ ${result.added || selected.length} รายการ`);
+        clearForm(false);
+        await loadPending();
+        closeAddPanel();
+      } catch (err) {
+        setMessage("searchMessage", err.message, true);
+      } finally {
+        document.getElementById("confirmSaveBtn").disabled = false;
+        document.getElementById("confirmSaveBtn").innerHTML = `<i class="fas fa-floppy-disk"></i>ยืนยันบันทึก`;
+      }
+    }
+
+    async function loadPending() {
+      const box = document.getElementById("pendingList");
+      box.className = "message";
+      box.innerText = "กำลังโหลด...";
+      try {
+        const result = await callGas("getPending");
+        pendingRows = result.data || [];
+        if (!pendingRows.length) {
+          document.getElementById("syncBtn").classList.add("hidden");
+          box.className = "message";
+          box.innerHTML = "ยังไม่มีรายการดำเนินการ เริ่มจากเพิ่มรายการดำเนินการ";
+          return;
+        }
+        const activeRows = pendingRows.filter(row => row.warrantStatus !== STATUS_REVOKED);
+        const historyRows = pendingRows.filter(row => row.warrantStatus === STATUS_REVOKED);
+        const needsStatusUpdate = pendingRows.some(row => row.syncStatus !== "synced");
+        document.getElementById("syncBtn").classList.toggle("hidden", !needsStatusUpdate);
+        const updateHeader = needsStatusUpdate ? `<th>ผลอัปเดต</th>` : "";
+        let html = `<div class="section-gap">`;
+
+        html += `<section>
+          <div class="section-head">
+            <h3>รายการที่ดำเนินอยู่</h3>
+            <span class="count-chip">${activeRows.length} รายการ</span>
+          </div>`;
+        if (!activeRows.length) {
+          html += `<div class="message">ไม่มีรายการที่ดำเนินอยู่</div>`;
+        } else {
+          html += `<div class="table-wrap responsive-table"><table><thead><tr><th>เวลา</th><th>หมายจับ</th><th>ชื่อสกุล</th><th>เหตุ</th><th>สถานะหมายจับ</th>${updateHeader}<th>จัดการ</th></tr></thead><tbody>`;
+          activeRows.forEach(row => {
+            const canRevoke = row.warrantStatus === STATUS_PENDING && row.syncStatus === "synced";
+            html += `<tr>
+              <td>${escapeHtml(row.timestamp || "")}</td>
+              <td>${escapeHtml(row.warrantNo || "")}</td>
+              <td>${escapeHtml(row.fullName || "")}</td>
+              <td>${escapeHtml(row.reason || "")}${row.reasonDetail ? `<div class="muted">${escapeHtml(row.reasonDetail)}</div>` : ""}</td>
+              <td>${statusBadge(row.warrantStatus)}</td>
+              ${needsStatusUpdate ? `<td>${syncCell(row)}</td>` : ""}
+              <td><button class="btn danger" onclick="openRevokeConfirm(${Number(row.rowId)})" ${canRevoke ? "" : "disabled"}>เพิกถอน</button></td>
+            </tr>`;
+          });
+          html += `</tbody></table></div><div class="mobile-list">${activeRows.map(row => recordCard(row, true)).join("")}</div>`;
+        }
+        html += `</section>`;
+
+        html += `<section>
+          <button class="btn secondary history-toggle" type="button" onclick="toggleHistory()">
+            <span>ประวัติรายการดำเนินการ</span>
+            <span class="count-chip">${historyRows.length} รายการ</span>
+          </button>
+          <div class="history-body hidden" id="historyBody" style="margin-top:10px">`;
+        if (!historyRows.length) {
+          html += `<div class="message">ยังไม่มีประวัติรายการดำเนินการ</div>`;
+        } else {
+          html += `<div class="table-wrap responsive-table"><table><thead><tr><th>เวลา</th><th>หมายจับ</th><th>ชื่อสกุล</th><th>เหตุ</th><th>สถานะหมายจับ</th>${updateHeader}</tr></thead><tbody>`;
+          historyRows.forEach(row => {
+            html += `<tr>
+              <td>${escapeHtml(row.timestamp || "")}</td>
+              <td>${escapeHtml(row.warrantNo || "")}</td>
+              <td>${escapeHtml(row.fullName || "")}</td>
+              <td>${escapeHtml(row.reason || "")}${row.reasonDetail ? `<div class="muted">${escapeHtml(row.reasonDetail)}</div>` : ""}</td>
+              <td>${statusBadge(row.warrantStatus)}</td>
+              ${needsStatusUpdate ? `<td>${syncCell(row)}</td>` : ""}
+            </tr>`;
+          });
+          html += `</tbody></table></div><div class="mobile-list">${historyRows.map(row => recordCard(row, false)).join("")}</div>`;
+        }
+        html += `</div></section></div>`;
+        box.className = "section-gap";
+        box.innerHTML = html;
+      } catch (err) {
+        document.getElementById("syncBtn").classList.remove("hidden");
+        box.className = "message error";
+        box.innerText = err.message;
+      }
+    }
+    async function syncNow() {
+      try {
+        await callGas("syncProcessing");
+        await loadPending();
+      } catch (err) {
+        document.getElementById("pendingList").className = "message error";
+        document.getElementById("pendingList").innerText = err.message;
+      }
+    }
+
+    function toggleHistory() {
+      const body = document.getElementById("historyBody");
+      if (body) body.classList.toggle("hidden");
+    }
+
+    function openRevokeConfirm(rowId) {
+      const row = pendingRows.find(item => Number(item.rowId) === Number(rowId));
+      if (!row) return;
+      revokeRowId = Number(rowId);
+      document.getElementById("revokeSummary").innerHTML = `
+        <div class="summary-row"><span>เลขที่หมายจับ</span><strong>${escapeHtml(row.warrantNo || "")}</strong></div>
+        <div class="summary-row"><span>ชื่อสกุล</span><strong>${escapeHtml(row.fullName || "")}</strong></div>
+        <div class="summary-row"><span>เหตุ</span><strong>${escapeHtml(row.reason || "")}${row.reasonDetail ? " - " + escapeHtml(row.reasonDetail) : ""}</strong></div>
+        <div class="summary-row"><span>สถานะใหม่</span><strong>${statusBadge(STATUS_REVOKED)}</strong></div>
+      `;
+      document.getElementById("revokeBackdrop").classList.add("show");
+    }
+
+    function closeRevokeConfirm() {
+      revokeRowId = null;
+      document.getElementById("revokeBackdrop").classList.remove("show");
+    }
+
+    async function markRevoked() {
+      if (!revokeRowId) return;
+      try {
+        document.getElementById("confirmRevokeBtn").disabled = true;
+        document.getElementById("confirmRevokeBtn").innerHTML = `<i class="fas fa-spinner fa-spin"></i>กำลังเพิกถอน`;
+        await callGas("markRevoked", { rowId: revokeRowId });
+        closeRevokeConfirm();
+        await loadPending();
+      } catch (err) {
+        document.getElementById("revokeSummary").innerHTML += `<div class="message error">${escapeHtml(err.message)}</div>`;
+      } finally {
+        document.getElementById("confirmRevokeBtn").disabled = false;
+        document.getElementById("confirmRevokeBtn").innerHTML = `<i class="fas fa-ban"></i>ยืนยันเพิกถอน`;
+      }
+    }
+
+    function clearForm(clearId = true) {
+      if (clearId) document.getElementById("id13Input").value = "";
+      document.getElementById("warrantResults").innerHTML = "";
+      document.getElementById("processForm").classList.add("hidden");
+      document.getElementById("submitToInput").value = "";
+      document.getElementById("reasonDetailInput").value = "";
+      searchResults = [];
+      document.getElementById("saveBtn").disabled = true;
+      document.getElementById("stickySaveBtn").disabled = true;
+      document.getElementById("stickyActions").classList.remove("show");
+    }
+
+    document.getElementById("openAddBtn").addEventListener("click", openAddPanel);
+    document.getElementById("closeAddBtn").addEventListener("click", closeAddPanel);
+    document.getElementById("searchBtn").addEventListener("click", searchWarrants);
+    document.getElementById("clearBtn").addEventListener("click", () => { clearForm(true); setMessage("searchMessage", ""); });
+    document.getElementById("saveBtn").addEventListener("click", openConfirm);
+    document.getElementById("stickySaveBtn").addEventListener("click", openConfirm);
+    document.getElementById("confirmSaveBtn").addEventListener("click", saveProcess);
+    document.getElementById("cancelConfirmBtn").addEventListener("click", closeConfirm);
+    document.getElementById("confirmRevokeBtn").addEventListener("click", markRevoked);
+    document.getElementById("cancelRevokeBtn").addEventListener("click", closeRevokeConfirm);
+    document.getElementById("syncBtn").addEventListener("click", syncNow);
+    document.getElementById("id13Input").addEventListener("keydown", e => { if (e.key === "Enter") searchWarrants(); });
+    document.getElementById("id13Input").addEventListener("input", e => {
+      e.target.value = e.target.value.replace(/\D/g, "").slice(0, 13);
+    });
+    document.getElementById("reasonSelect").addEventListener("change", e => {
+      document.getElementById("reasonDetailBox").classList.toggle("hidden", e.target.value !== "อื่น ๆ");
+    });
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      try {
+        await initLiff();
+        await loadPending();
+      } catch (err) {
+        document.getElementById("displayName").innerText = "เชื่อมต่อ LINE ไม่สำเร็จ";
+        document.getElementById("pendingList").className = "message error";
+        document.getElementById("pendingList").innerText = err.message;
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
