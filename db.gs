@@ -78,3 +78,59 @@ function findWarrantByNo_(warrantNo) {
   });
   return matches;
 }
+
+/**
+ * ฟังก์ชันกวาดข้อมูลหมายจับจากทุกแท็บมารวมเป็น Master Index ชุดเดียวและบันทึกลง Cache
+ */
+function refreshWarrantMasterIndex_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheets = ss.getSheets();
+  
+  const id13Map = {};
+  const allData = [];
+  
+  // วนลูปเปิดอ่านข้อมูลจากทุกแท็บในครั้งเดียว
+  sheets.forEach(function(sheet) {
+    const sheetName = sheet.getName();
+    
+    // ⚡️ ข้ามแท็บที่ไม่ใช่ฐานข้อมูลหมายจับ (เช่น แท็บ Log, Config, สถิติ)
+    if (sheetName === "Log" || sheetName === "Dashboard") return; 
+    
+    const values = sheet.getDataRange().getValues();
+    if (values.length <= 1) return; // ถ้าชีตว่างหรือมีแค่หัวตารางให้ข้าม
+    
+    // เริ่มวนลูปตั้งแต่แถวที่ 1 (ข้ามหัวตารางแถวที่ 0)
+    for (let i = 1; i < values.length; i++) {
+      const row = values[i];
+      
+      // ดึงค่าและจัด Format ข้อมูล (!! แก้ไขตำแหน่ง row[x] ให้ตรงกับคอลัมน์จริงของคุณ !!)
+      const id13 = String(row[0]).trim(); // สมมติ คอลัมน์ A (0) คือเลข 13 หลัก
+      const name = String(row[1]).trim(); // สมมติ คอลัมน์ B (1) คือชื่อ-นามสกุล
+      
+      if (!id13) continue; // ถ้าไม่มีเลขบัตรให้ข้ามแถวนี้
+      
+      const item = {
+        id13: id13,
+        name: name,
+        sheetName: sheetName, // บันทึกไว้เพื่อให้รู้ว่าข้อมูลนี้ถูกดึงมาจากแท็บไหน
+        warrantNo: String(row[2]).trim(), // สมมติ คอลัมน์ C (2) คือเลขที่หมายจับ
+        charge: String(row[3]).trim()      // สมมติ คอลัมน์ D (3) คือฐานความผิด
+      };
+      
+      // แผนที่แบบ O(1) ผูกเลข 13 หลักเป็น Key เพื่อให้ค้นหาได้ไวที่สุด
+      id13Map[id13] = item;
+      allData.push(item);
+    }
+  });
+  
+  const masterIndex = {
+    id13Map: id13Map,
+    allData: allData
+  };
+  
+  // เซฟข้อมูลดัชนีรวมลงในระบบ Cache ของ Google (เก็บได้สูงสุด 6 ชั่วโมง = 21600 วินาที)
+  // เพื่อให้การกดค้นหาครั้งต่อๆ ไปดึงจากตรงนี้ได้ทันที ไม่ต้องรันเปิดอ่านชีตซ้ำอีก
+  CacheService.getScriptCache().put("WARRANT_MASTER_INDEX", JSON.stringify(masterIndex), 21600);
+  
+  return masterIndex;
+}

@@ -1,17 +1,15 @@
-﻿// ========== var.gs ==========
+// ========== var.gs ==========
 // ตั้งค่าระบบหลัก
-
-const LIFF_CHANNEL_ID = "2010276759-IZoVxJjH";
 
 // ใส่ LINE User ID ของเจ้าหน้าที่ตำรวจศาล 2 คน
 const AUTHORIZED_USERS = [
-  "...", // เจ้าหน้าที่คนที่ 1
-  "..."  // เจ้าหน้าที่คนที่ 2
+  "Udfa6e5b6d090d77b835483f6bd683d6f", // ศาล
+  "Uc5330e8eee2ff8ab298c7019ef377965"  // หมอก
 ];
 
 // ID ของ Google Sheets แต่ละฐานข้อมูล
-const WARRANT_DB_ID = "...";
-const UPDATE_DB_ID = "...";
+const WARRANT_DB_ID = "1sq8GyDDiqS2U989TpcTlMyJ5P9gtrRTgbJjcQHtEOB4";
+const UPDATE_DB_ID = "1mP3tver14Tp0wYd9xkk4Lh5Mv_g39UPy06juu8t_Dgk";
 
 const SHEET_LOGS = "log";
 const SHEET_PROCESSING = "processing";

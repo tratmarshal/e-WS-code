@@ -1,4 +1,4 @@
-﻿// ========== code.gs ==========
+// ========== code.gs ==========
 // Web App API Gateway
 
 function doPost(e) {
@@ -32,7 +32,10 @@ function doPost(e) {
     switch (action) {
       case "search":
         result = searchWarrant(payload.searchType, payload.keyword);
-        break;
+        // เก็บคำค้นหาและประเภทการค้นหาลงใน detail
+        const searchDetail = `Type: ${payload.searchType}, Keyword: ${payload.keyword}`;
+        logActivity(userId, displayName, page, action, authStatus, result.success === false ? `${searchDetail} (failed: ${result.error || "unknown"})` : `${searchDetail} (success)`);
+        return jsonResponse_(result);
       case "getPending":
         result = getPendingProcess();
         break;

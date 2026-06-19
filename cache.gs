@@ -44,7 +44,9 @@ function buildWarrantSearchCacheKey_(searchType, term) {
 function loadWarrantSearchFromSheets_(searchType, term) {
   const lowerTerm = term.toLowerCase();
   const results = [];
-  getWarrantSheets_().forEach(sheet => {
+  const sheets = getWarrantSheets_();
+
+  sheets.forEach(sheet => {
     const values = sheet.getDataRange().getValues();
     if (values.length < 2) return;
     const columns = getWarrantColumnMap_(values[0]);

@@ -72,3 +72,4 @@ function mapProcessingWarrantStatus_(status) {
   }
   return cleanStatus;
 }
+
